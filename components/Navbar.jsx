@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
+import { authClient } from "@/lib/auth-client";
 
 const categories = [
   { name: "সব", slug: "" },
@@ -16,14 +20,30 @@ const categories = [
 const tickerItems = [
   ["🍚", "চাল", "৭২", "▲ ২.১%"],
   ["🫘", "ডাল", "১৩০", "▼ ১.৪%"],
-  ["🫙", "সয়াবিন তেল", "১৭৫", "▲ ০.৮%"],
+  ["🫙", "তেল", "১৭৫", "▲ ০.৮%"],
   ["🥔", "আলু", "৪৫", "▼ ২.৯%"],
   ["🧅", "পেঁয়াজ", "৮০", "▲ ১.৫%"],
   ["🌶️", "মরিচ", "২৪০", "▲ ৩.১%"],
 ];
 
 export default function Navbar() {
+  const router = useRouter();
+
+  const {
+    data: session,
+    isPending,
+  } = authClient.useSession();
+
   const ticker = [...tickerItems, ...tickerItems];
+
+  async function handleLogout() {
+    await authClient.signOut();
+
+    toast.success("Logout সফল হয়েছে");
+
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="bg-[#f7f8f3]">
@@ -45,24 +65,46 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <div className="hidden items-center gap-2 sm:flex">
-            <Link
-              href="/signin"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-[#1d5c3a] hover:bg-[#e8efe9]"
-            >
-              সাইন ইন
-            </Link>
+          <div className="flex items-center gap-2">
+            {isPending ? (
+              <div className="h-9 w-20 animate-pulse rounded-lg bg-gray-200" />
+            ) : session ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="hidden rounded-lg px-4 py-2 text-sm font-bold text-[#1d5c3a] sm:block"
+                >
+                  {session.user.name || "Profile"}
+                </Link>
 
-            <Link
-              href="/signup"
-              className="rounded-lg bg-[#1d5c3a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174b30]"
-            >
-              সাইন আপ
-            </Link>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg bg-[#1d5c3a] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-[#1d5c3a]"
+                >
+                  সাইন ইন
+                </Link>
+
+                <Link
+                  href="/signup"
+                  className="rounded-lg bg-[#1d5c3a] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  সাইন আপ
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
-        <nav className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
+        <nav className="flex gap-1 overflow-x-auto py-3">
           {categories.map((category, index) => (
             <Link
               key={category.name}
@@ -71,10 +113,10 @@ export default function Navbar() {
                   ? "/"
                   : `/category/${category.slug}`
               }
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
                 index === 0
                   ? "bg-[#1d5c3a] text-white"
-                  : "text-gray-600 hover:bg-[#e4eee6] hover:text-[#1d5c3a]"
+                  : "text-gray-600 hover:bg-[#e4eee6]"
               }`}
             >
               {category.name}
@@ -92,17 +134,15 @@ export default function Navbar() {
                 className="mx-5 flex items-center gap-2 text-sm"
               >
                 <span>{item[0]}</span>
-                <span className="font-medium text-gray-700">
-                  {item[1]}
-                </span>
-                <span className="font-bold text-[#1d5c3a]">
+                <span>{item[1]}</span>
+                <b className="text-[#1d5c3a]">
                   {item[2]} টাকা
-                </span>
+                </b>
                 <span
                   className={
                     item[3].startsWith("▲")
-                      ? "font-semibold text-green-600"
-                      : "font-semibold text-red-500"
+                      ? "text-green-600"
+                      : "text-red-500"
                   }
                 >
                   {item[3]}
