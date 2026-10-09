@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
@@ -6,32 +7,38 @@ import { getChange } from "@/lib/utils";
 
 export default async function HomePage() {
   let products = [];
+  let error = false;
 
   try {
     const data = await getProducts();
 
     products = Array.isArray(data)
       ? data
-      : data?.products || data?.data || [];
-  } catch (error) {
-    console.error(error);
+      : Array.isArray(data?.products)
+        ? data.products
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.results)
+            ? data.results
+            : [];
+  } catch (err) {
+    console.error("Products API error:", err);
+    error = true;
   }
 
   const sorted = [...products].sort(
-    (a, b) =>
-      Number(getChange(b)) - Number(getChange(a))
+    (a, b) => Number(getChange(b) || 0) - Number(getChange(a) || 0)
   );
 
   const risers = sorted
-    .filter((product) => Number(getChange(product)) > 0)
+    .filter((product) => Number(getChange(product) || 0) > 0)
     .slice(0, 6);
 
   const fallers = [...products]
     .sort(
-      (a, b) =>
-        Number(getChange(a)) - Number(getChange(b))
+      (a, b) => Number(getChange(a) || 0) - Number(getChange(b) || 0)
     )
-    .filter((product) => Number(getChange(product)) < 0)
+    .filter((product) => Number(getChange(product) || 0) < 0)
     .slice(0, 6);
 
   return (
@@ -41,18 +48,16 @@ export default async function HomePage() {
       <Hero />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        {/* Risers */}
+        {/* আজ দাম বেড়েছে */}
         <section className="py-14">
-          <div className="mb-7 flex items-end justify-between">
-            <div>
-              <p className="text-sm font-semibold text-green-600">
-                আজকের আপডেট
-              </p>
+          <div className="mb-7">
+            <p className="text-sm font-semibold text-green-600">
+              আজকের আপডেট
+            </p>
 
-              <h2 className="mt-1 text-2xl font-black text-[#193f2a] sm:text-3xl">
-                আজ দাম বেড়েছে ▲
-              </h2>
-            </div>
+            <h2 className="mt-1 text-2xl font-black text-[#193f2a] sm:text-3xl">
+              আজ দাম বেড়েছে ▲
+            </h2>
           </div>
 
           {risers.length > 0 ? (
@@ -66,12 +71,14 @@ export default async function HomePage() {
             </div>
           ) : (
             <p className="rounded-xl bg-white p-6 text-gray-500">
-              আজ দাম বাড়ার কোনো তথ্য পাওয়া যায়নি।
+              {error
+                ? "পণ্যের তথ্য লোড করা যায়নি।"
+                : "আজ দাম বাড়ার কোনো তথ্য পাওয়া যায়নি।"}
             </p>
           )}
         </section>
 
-        {/* Fallers */}
+        {/* আজ দাম কমেছে */}
         <section className="py-8">
           <div className="mb-7">
             <p className="text-sm font-semibold text-red-500">
@@ -94,12 +101,14 @@ export default async function HomePage() {
             </div>
           ) : (
             <p className="rounded-xl bg-white p-6 text-gray-500">
-              আজ দাম কমার কোনো তথ্য পাওয়া যায়নি।
+              {error
+                ? "পণ্যের তথ্য লোড করা যায়নি।"
+                : "আজ দাম কমার কোনো তথ্য পাওয়া যায়নি।"}
             </p>
           )}
         </section>
 
-        {/* All Products */}
+        {/* সব পণ্য */}
         <section id="সব-পণ্য" className="scroll-mt-10 py-16">
           <div className="mb-8">
             <p className="text-sm font-semibold text-[#1d5c3a]">
@@ -111,8 +120,7 @@ export default async function HomePage() {
             </h2>
 
             <p className="mt-2 max-w-xl text-gray-500">
-              প্রয়োজনীয় সব পণ্যের আজকের দাম এক জায়গায়
-              দেখে নিন।
+              প্রয়োজনীয় সব পণ্যের আজকের দাম এক জায়গায় দেখে নিন।
             </p>
           </div>
 
@@ -134,7 +142,9 @@ export default async function HomePage() {
               </h3>
 
               <p className="mt-2 text-gray-500">
-                কিছুক্ষণ পর আবার চেষ্টা করুন।
+                {error
+                  ? "API সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।"
+                  : "কোনো পণ্য পাওয়া যায়নি।"}
               </p>
             </div>
           )}
@@ -148,8 +158,7 @@ export default async function HomePage() {
           </p>
 
           <p className="text-sm text-gray-500">
-            সকল দাম সম্ভাব্য; বাজার অবস্থার ওপর নির্ভর করে
-            পরিবর্তিত হয়।
+            সকল দাম বাজারের তথ্যের ওপর নির্ভরশীল।
           </p>
         </div>
       </footer>
